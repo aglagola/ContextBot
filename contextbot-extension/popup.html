@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ContextBot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0e0e0f;
+      --bg2: #1a1a1c;
+      --bg3: #242426;
+      --border: rgba(255,255,255,0.08);
+      --border2: rgba(255,255,255,0.14);
+      --text: #f0ede8;
+      --muted: #8a8784;
+      --accent: #e8d5a3;
+      --accent2: #c4a96b;
+      --green: #6dbd8e;
+      --amber: #e0a847;
+      --blue: #7aabdc;
+      --red: #e07a7a;
+      --radius: 8px;
+    }
+
+    body {
+      width: 360px;
+      min-height: 200px;
+      max-height: 580px;
+      overflow-y: auto;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    body::-webkit-scrollbar { width: 4px; }
+    body::-webkit-scrollbar-track { background: transparent; }
+    body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px 11px;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo { display: flex; align-items: center; gap: 8px; }
+    .logo-mark {
+      width: 26px; height: 26px;
+      background: var(--accent);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-mark svg { width: 14px; height: 14px; }
+    .logo-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 15px;
+      color: var(--text);
+      letter-spacing: 0.01em;
+    }
+    .settings-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); padding: 4px;
+      border-radius: 4px; transition: color 0.15s;
+      display: flex; align-items: center;
+    }
+    .settings-btn:hover { color: var(--text); }
+
+    /* Views */
+    .view { display: none; padding: 14px; }
+    .view.active { display: block; }
+
+    /* Settings view */
+    .settings-label {
+      font-size: 11px; font-weight: 500;
+      color: var(--muted); text-transform: uppercase;
+      letter-spacing: 0.08em; margin-bottom: 6px;
+    }
+    .settings-input {
+      width: 100%; padding: 8px 10px;
+      background: var(--bg2); border: 1px solid var(--border2);
+      border-radius: var(--radius); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: 13px;
+      outline: none; transition: border-color 0.15s;
+    }
+    .settings-input:focus { border-color: var(--accent2); }
+    .settings-input::placeholder { color: var(--muted); }
+    .save-btn {
+      width: 100%; margin-top: 10px;
+      padding: 9px; border: none;
+      background: var(--accent); color: #1a1400;
+      font-family: 'DM Sans', sans-serif; font-weight: 500;
+      font-size: 13px; border-radius: var(--radius);
+      cursor: pointer; transition: opacity 0.15s;
+    }
+    .save-btn:hover { opacity: 0.88; }
+    .settings-hint {
+      margin-top: 8px; font-size: 11px; color: var(--muted); text-align: center;
+    }
+    .settings-hint a { color: var(--accent2); text-decoration: none; }
+
+    /* Idle view */
+    .idle-icon {
+      display: flex; justify-content: center;
+      margin: 8px 0 10px; opacity: 0.25;
+    }
+    .idle-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 17px; text-align: center;
+      color: var(--text); margin-bottom: 5px;
+    }
+    .idle-sub {
+      font-size: 12px; color: var(--muted);
+      text-align: center; margin-bottom: 14px;
+    }
+    .analyze-btn {
+      width: 100%; padding: 10px;
+      background: var(--accent); color: #1a1400;
+      border: none; border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif; font-weight: 500;
+      font-size: 13px; cursor: pointer;
+      transition: opacity 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .analyze-btn:hover { opacity: 0.88; }
+    .analyze-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* Loading */
+    .loading-wrap {
+      padding: 24px 14px;
+      text-align: center;
+    }
+    .spinner {
+      width: 22px; height: 22px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-msg { font-size: 12px; color: var(--muted); }
+
+    /* Error */
+    .error-box {
+      background: rgba(224,122,122,0.1);
+      border: 1px solid rgba(224,122,122,0.25);
+      border-radius: var(--radius); padding: 10px 12px;
+      color: var(--red); font-size: 12px; line-height: 1.5;
+      margin-bottom: 10px;
+    }
+
+    /* Results */
+    .section {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 8px; overflow: hidden;
+    }
+    .section-head {
+      display: flex; align-items: center; gap: 7px;
+      padding: 8px 11px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      font-size: 10px; font-weight: 500;
+      color: var(--muted); text-transform: uppercase;
+      letter-spacing: 0.09em;
+    }
+    .section-body { padding: 10px 11px; }
+
+    /* Source section */
+    .source-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 16px; color: var(--text);
+      margin-bottom: 3px;
+    }
+    .source-meta { font-size: 11px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+    .bias-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+    .bias-label { font-size: 10px; color: var(--muted); width: 26px; }
+    .bias-label.right { text-align: right; }
+    .bias-track {
+      flex: 1; height: 4px; border-radius: 2px;
+      background: var(--bg3); position: relative;
+    }
+    .bias-fill {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      border-radius: 2px;
+      background: linear-gradient(to right, #7aabdc 0%, #6dbd8e 50%, #e0a847 100%);
+      opacity: 0.4;
+    }
+    .bias-dot {
+      position: absolute; top: 50%;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--accent);
+      transform: translate(-50%, -50%);
+      transition: left 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .bias-badge {
+      display: inline-block; font-size: 10px;
+      padding: 2px 8px; border-radius: 99px;
+      font-weight: 500;
+    }
+    .bias-badge.left { background: rgba(122,171,220,0.15); color: var(--blue); }
+    .bias-badge.center { background: rgba(109,189,142,0.15); color: var(--green); }
+    .bias-badge.right { background: rgba(224,168,71,0.15); color: var(--amber); }
+
+    /* Claims */
+    .claim { display: flex; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+    .claim:last-child { border-bottom: none; padding-bottom: 0; }
+    .claim-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+    .claim-dot.supported { background: var(--green); }
+    .claim-dot.disputed { background: var(--red); }
+    .claim-dot.needs-context { background: var(--amber); }
+    .claim-text { font-size: 12px; color: var(--text); line-height: 1.5; }
+    .claim-verdict { font-size: 11px; margin-top: 2px; }
+    .claim-verdict.supported { color: var(--green); }
+    .claim-verdict.disputed { color: var(--red); }
+    .claim-verdict.needs-context { color: var(--amber); }
+
+    /* Context items */
+    .ctx-item { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text); line-height: 1.5; }
+    .ctx-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .ctx-bullet { color: var(--accent2); margin-top: 1px; flex-shrink: 0; font-size: 14px; line-height: 1.2; }
+
+    /* Perspectives */
+    .persp { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+    .persp:last-child { border-bottom: none; padding-bottom: 0; }
+    .persp-outlet { font-size: 12px; font-weight: 500; color: var(--accent); min-width: 80px; flex-shrink: 0; }
+    .persp-angle { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+    /* Re-analyze */
+    .reanalyze-btn {
+      width: 100%; margin-top: 10px; padding: 8px;
+      background: transparent; border: 1px solid var(--border2);
+      border-radius: var(--radius); color: var(--muted);
+      font-family: 'DM Sans', sans-serif; font-size: 12px;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .reanalyze-btn:hover { border-color: var(--accent2); color: var(--text); }
+
+    /* No-key prompt */
+    .no-key-banner {
+      background: rgba(232,213,163,0.08);
+      border: 1px solid rgba(232,213,163,0.2);
+      border-radius: var(--radius); padding: 10px 12px;
+      font-size: 12px; color: var(--accent);
+      margin-bottom: 10px; line-height: 1.5;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="7" cy="7" r="3" stroke="#1a1400" stroke-width="1.5"/>
+          <path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13M2.93 2.93l1.06 1.06M10.01 10.01l1.06 1.06M11.07 2.93l-1.06 1.06M3.99 10.01l-1.06 1.06" stroke="#1a1400" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="logo-name">ContextBot</span>
+    </div>
+    <button class="settings-btn" id="toggle-settings" title="Settings" aria-label="Settings">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M2.64 2.64l1.06 1.06M12.3 12.3l1.06 1.06M13.36 2.64l-1.06 1.06M3.7 12.3l-1.06 1.06" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Settings view -->
+  <div class="view" id="view-settings">
+    <div class="settings-label">Anthropic API key</div>
+    <input class="settings-input" type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off" />
+    <button class="save-btn" id="save-key-btn">Save key</button>
+    <p class="settings-hint">Get a key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
+  </div>
+
+  <!-- Idle view -->
+  <div class="view active" id="view-idle">
+    <div id="no-key-banner" class="no-key-banner" style="display:none;">
+      Add your Anthropic API key in settings to get started.
+    </div>
+    <div class="idle-icon">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+        <circle cx="24" cy="24" r="10" stroke="white" stroke-width="2"/>
+        <path d="M24 4v5M24 39v5M4 24h5M39 24h5M8.69 8.69l3.54 3.54M35.77 35.77l3.54 3.54M39.31 8.69l-3.54 3.54M12.23 35.77l-3.54 3.54" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="24" cy="24" r="3.5" fill="white"/>
+      </svg>
+    </div>
+    <div class="idle-title">Analyze this article</div>
+    <div class="idle-sub" id="idle-sub">Get an instant intelligence brief on what you're reading.</div>
+    <button class="analyze-btn" id="analyze-btn">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1L8.5 5.5H13L9.5 8.5L11 13L7 10L3 13L4.5 8.5L1 5.5H5.5L7 1Z" fill="currentColor"/></svg>
+      Analyze article
+    </button>
+  </div>
+
+  <!-- Loading view -->
+  <div class="view" id="view-loading">
+    <div class="loading-wrap">
+      <div class="spinner"></div>
+      <div class="loading-msg" id="loading-msg">Reading article...</div>
+    </div>
+  </div>
+
+  <!-- Results view -->
+  <div class="view" id="view-results">
+    <div id="error-box" class="error-box" style="display:none;"></div>
+
+    <!-- Source -->
+    <div class="section" id="sec-source">
+      <div class="section-head">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="2" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M4 5h4M4 7h2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Source intelligence
+      </div>
+      <div class="section-body">
+        <div class="source-name" id="res-source-name"></div>
+        <div class="source-meta" id="res-source-meta"></div>
+        <div class="bias-row">
+          <span class="bias-label">Left</span>
+          <div class="bias-track">
+            <div class="bias-fill"></div>
+            <div class="bias-dot" id="res-bias-dot" style="left:50%"></div>
+          </div>
+          <span class="bias-label right">Right</span>
+        </div>
+        <div id="res-bias-badge"></div>
+      </div>
+    </div>
+
+    <!-- Claims -->
+    <div class="section" id="sec-claims">
+      <div class="section-head">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3.5h8M2 6h5M2 8.5h3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="9.5" cy="8.5" r="1.5" stroke="currentColor" stroke-width="1.1"/></svg>
+        Key claims
+      </div>
+      <div class="section-body" id="res-claims"></div>
+    </div>
+
+    <!-- Missing context -->
+    <div class="section">
+      <div class="section-head">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M6 5.5v3M6 4h.01" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Missing context
+      </div>
+      <div class="section-body" id="res-context"></div>
+    </div>
+
+    <!-- Perspectives -->
+    <div class="section">
+      <div class="section-head">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 6C1.5 6 3 2.5 6 2.5S10.5 6 10.5 6 9 9.5 6 9.5 1.5 6 1.5 6Z" stroke="currentColor" stroke-width="1.2"/><circle cx="6" cy="6" r="1.5" stroke="currentColor" stroke-width="1.2"/></svg>
+        Other perspectives
+      </div>
+      <div class="section-body" id="res-perspectives"></div>
+    </div>
+
+    <button class="reanalyze-btn" id="reanalyze-btn">↻ Analyze again</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

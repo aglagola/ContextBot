@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "ContextBot",
+  "version": "0.1.0",
+  "description": "Instant intelligence briefs on any article you read. Read smarter, not harder.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://api.anthropic.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "ContextBot"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
