@@ -1,0 +1,282 @@
+
+<h2 class="sr-only">ContextBot prototype — paste an article URL or text to get an intelligence brief</h2>
+
+<style>
+  #cb-root { font-family: var(--font-sans); padding: 1.5rem 0; }
+  #cb-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; }
+  #cb-logo { width: 32px; height: 32px; border-radius: 8px; background: #1a1a1a; display: flex; align-items: center; justify-content: center; }
+  #cb-logo i { font-size: 18px; color: #fff; }
+  #cb-title { font-size: 18px; font-weight: 500; color: var(--color-text-primary); }
+  #cb-subtitle { font-size: 13px; color: var(--color-text-secondary); }
+
+  #cb-input-area { background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-lg); padding: 1rem; margin-bottom: 1rem; }
+  #cb-tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+  .cb-tab { font-size: 13px; padding: 5px 12px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-tertiary); background: transparent; color: var(--color-text-secondary); cursor: pointer; transition: all 0.15s; }
+  .cb-tab.active { background: var(--color-background-secondary); color: var(--color-text-primary); border-color: var(--color-border-secondary); }
+  #cb-url-input, #cb-text-input { width: 100%; box-sizing: border-box; font-size: 14px; }
+  #cb-text-input { resize: vertical; min-height: 100px; }
+  #cb-analyze-btn { width: 100%; margin-top: 10px; padding: 10px; font-size: 14px; font-weight: 500; border-radius: var(--border-radius-md); border: none; background: #1a1a1a; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.15s; }
+  #cb-analyze-btn:hover { opacity: 0.85; }
+  #cb-analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  #cb-result { display: none; }
+  #cb-result.visible { display: block; }
+
+  .cb-section { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 10px; }
+  .cb-section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .cb-section-icon { font-size: 16px; }
+  .cb-section-title { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .cb-source-name { font-size: 17px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+  .cb-source-meta { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 12px; }
+  .cb-bias-bar-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .cb-bias-label { font-size: 12px; color: var(--color-text-secondary); width: 30px; }
+  .cb-bias-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--color-background-secondary); position: relative; overflow: visible; }
+  .cb-bias-track { height: 100%; border-radius: 3px; background: var(--color-border-secondary); }
+  .cb-bias-marker { position: absolute; top: -4px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--color-background-primary); transform: translateX(-50%); }
+  .cb-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 3px 10px; border-radius: 99px; font-weight: 500; }
+  .cb-badge.neutral { background: var(--color-background-secondary); color: var(--color-text-secondary); }
+  .cb-badge.left { background: #E6F1FB; color: #185FA5; }
+  .cb-badge.center { background: #EAF3DE; color: #3B6D11; }
+  .cb-badge.right { background: #FAECE7; color: #993C1D; }
+
+  .cb-claim { display: flex; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .cb-claim:last-child { border-bottom: none; padding-bottom: 0; }
+  .cb-claim-icon { font-size: 15px; margin-top: 1px; flex-shrink: 0; }
+  .cb-claim-text { font-size: 14px; color: var(--color-text-primary); line-height: 1.5; }
+  .cb-claim-verdict { font-size: 12px; margin-top: 3px; }
+  .cb-verdict-supported { color: #3B6D11; }
+  .cb-verdict-disputed { color: #BA7517; }
+  .cb-verdict-context { color: #185FA5; }
+
+  .cb-context-item { display: flex; gap: 10px; padding: 7px 0; border-bottom: 0.5px solid var(--color-border-tertiary); font-size: 14px; color: var(--color-text-primary); line-height: 1.5; }
+  .cb-context-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .cb-perspective { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .cb-perspective:last-child { border-bottom: none; padding-bottom: 0; }
+  .cb-perspective-outlet { font-size: 13px; font-weight: 500; color: var(--color-text-primary); min-width: 90px; }
+  .cb-perspective-summary { font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; }
+
+  #cb-loading { display: none; text-align: center; padding: 2rem; }
+  #cb-loading.visible { display: block; }
+  .cb-spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--color-border-secondary); border-top-color: var(--color-text-primary); border-radius: 50%; animation: spin 0.7s linear infinite; margin-bottom: 10px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #cb-loading-msg { font-size: 14px; color: var(--color-text-secondary); }
+
+  #cb-error { display: none; background: var(--color-background-danger); border: 0.5px solid var(--color-border-danger); border-radius: var(--border-radius-md); padding: 10px 14px; font-size: 14px; color: var(--color-text-danger); margin-bottom: 10px; }
+  #cb-error.visible { display: block; }
+</style>
+
+<div id="cb-root">
+  <div id="cb-header">
+    <div id="cb-logo"><i class="ti ti-spy" aria-hidden="true"></i></div>
+    <div>
+      <div id="cb-title">ContextBot</div>
+      <div id="cb-subtitle">Read smarter, not harder</div>
+    </div>
+  </div>
+
+  <div id="cb-input-area">
+    <div id="cb-tabs">
+      <button class="cb-tab active" onclick="switchTab('url')"><i class="ti ti-link" aria-hidden="true"></i> URL</button>
+      <button class="cb-tab" onclick="switchTab('text')"><i class="ti ti-text-size" aria-hidden="true"></i> Paste text</button>
+    </div>
+    <input type="text" id="cb-url-input" placeholder="https://example.com/article..." />
+    <textarea id="cb-text-input" placeholder="Paste article text here..." style="display:none;"></textarea>
+    <button id="cb-analyze-btn" onclick="analyze()">
+      <i class="ti ti-analyze" aria-hidden="true"></i> Analyze article
+    </button>
+  </div>
+
+  <div id="cb-error"></div>
+  <div id="cb-loading"><div class="cb-spinner"></div><div id="cb-loading-msg">Fetching source intelligence...</div></div>
+
+  <div id="cb-result">
+    <div class="cb-section">
+      <div class="cb-section-header">
+        <i class="ti ti-building-newspaper cb-section-icon" style="color: var(--color-text-secondary);" aria-hidden="true"></i>
+        <span class="cb-section-title">Source intelligence</span>
+      </div>
+      <div id="cb-source-name" class="cb-source-name"></div>
+      <div id="cb-source-meta" class="cb-source-meta"></div>
+      <div class="cb-bias-bar-wrap">
+        <span class="cb-bias-label" style="text-align:right; font-size:11px;">Left</span>
+        <div class="cb-bias-bar">
+          <div class="cb-bias-track" style="width:100%; background: linear-gradient(to right, #B5D4F4, #C0DD97, #F5C4B3); opacity:0.4;"></div>
+          <div class="cb-bias-marker" id="cb-bias-dot" style="background:#1a1a1a; left:50%;"></div>
+        </div>
+        <span class="cb-bias-label" style="font-size:11px;">Right</span>
+      </div>
+      <div id="cb-bias-badge"></div>
+    </div>
+
+    <div class="cb-section">
+      <div class="cb-section-header">
+        <i class="ti ti-check-list cb-section-icon" style="color: var(--color-text-secondary);" aria-hidden="true"></i>
+        <span class="cb-section-title">Key claims</span>
+      </div>
+      <div id="cb-claims"></div>
+    </div>
+
+    <div class="cb-section">
+      <div class="cb-section-header">
+        <i class="ti ti-bulb cb-section-icon" style="color: var(--color-text-secondary);" aria-hidden="true"></i>
+        <span class="cb-section-title">Missing context</span>
+      </div>
+      <div id="cb-context"></div>
+    </div>
+
+    <div class="cb-section">
+      <div class="cb-section-header">
+        <i class="ti ti-arrows-left-right cb-section-icon" style="color: var(--color-text-secondary);" aria-hidden="true"></i>
+        <span class="cb-section-title">Other perspectives</span>
+      </div>
+      <div id="cb-perspectives"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let activeTab = 'url';
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.cb-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='url')||(i===1&&tab==='text')));
+  document.getElementById('cb-url-input').style.display = tab==='url' ? '' : 'none';
+  document.getElementById('cb-text-input').style.display = tab==='text' ? '' : 'none';
+}
+
+const loadingMsgs = ['Fetching source intelligence...','Analyzing key claims...','Scanning for missing context...','Gathering other perspectives...'];
+
+async function analyze() {
+  const input = activeTab === 'url'
+    ? document.getElementById('cb-url-input').value.trim()
+    : document.getElementById('cb-text-input').value.trim();
+
+  if (!input) { showError('Please enter a URL or paste article text first.'); return; }
+
+  hideError();
+  document.getElementById('cb-result').classList.remove('visible');
+  document.getElementById('cb-loading').classList.add('visible');
+  document.getElementById('cb-analyze-btn').disabled = true;
+
+  let msgIdx = 0;
+  const msgEl = document.getElementById('cb-loading-msg');
+  msgEl.textContent = loadingMsgs[0];
+  const msgInterval = setInterval(() => {
+    msgIdx = (msgIdx + 1) % loadingMsgs.length;
+    msgEl.textContent = loadingMsgs[msgIdx];
+  }, 2200);
+
+  const prompt = `You are ContextBot, a media intelligence assistant. Analyze the following article input and return a JSON object only (no markdown, no explanation).
+
+Input: ${input}
+
+Return this exact JSON structure:
+{
+  "source": {
+    "name": "Publication name (infer from URL or text)",
+    "ownership": "Who owns/funds it (1 sentence)",
+    "bias": "left-center" | "center" | "right-center" | "left" | "right",
+    "biasPosition": 0.5 (number 0-1, 0=far left, 1=far right, 0.5=center),
+    "trustNotes": "1 sentence on credibility or notable history"
+  },
+  "claims": [
+    { "text": "A key factual claim from the article (short)", "verdict": "supported" | "disputed" | "needs-context", "verdictNote": "Brief explanation" }
+  ],
+  "missingContext": [
+    "A fact, counterargument, or background detail not mentioned in the article"
+  ],
+  "perspectives": [
+    { "outlet": "Outlet name", "angle": "How they'd likely cover this differently (1 sentence)" }
+  ]
+}
+
+Return 2-3 claims, 2-3 missing context items, and 2-3 perspectives. Be specific and useful. Return only valid JSON.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await resp.json();
+    const raw = data.content.map(b => b.text || '').join('');
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    clearInterval(msgInterval);
+    renderResult(parsed);
+  } catch(e) {
+    clearInterval(msgInterval);
+    showError('Something went wrong analyzing this article. Please try again.');
+    console.error(e);
+  } finally {
+    document.getElementById('cb-loading').classList.remove('visible');
+    document.getElementById('cb-analyze-btn').disabled = false;
+  }
+}
+
+function renderResult(d) {
+  const { source, claims, missingContext, perspectives } = d;
+
+  document.getElementById('cb-source-name').textContent = source.name;
+  document.getElementById('cb-source-meta').textContent = (source.ownership || '') + (source.trustNotes ? ' · ' + source.trustNotes : '');
+
+  const pos = Math.max(0.05, Math.min(0.95, source.biasPosition || 0.5));
+  document.getElementById('cb-bias-dot').style.left = (pos * 100) + '%';
+
+  const biasMap = {
+    'left': { cls: 'left', label: 'Left-leaning' },
+    'left-center': { cls: 'left', label: 'Center-left' },
+    'center': { cls: 'center', label: 'Center' },
+    'right-center': { cls: 'right', label: 'Center-right' },
+    'right': { cls: 'right', label: 'Right-leaning' }
+  };
+  const binfo = biasMap[source.bias] || biasMap['center'];
+  document.getElementById('cb-bias-badge').innerHTML = `<span class="cb-badge ${binfo.cls}">${binfo.label}</span>`;
+
+  const verdictIconMap = { supported: 'ti-circle-check', disputed: 'ti-alert-triangle', 'needs-context': 'ti-info-circle' };
+  const verdictColorMap = { supported: '#3B6D11', disputed: '#BA7517', 'needs-context': '#185FA5' };
+  const verdictLabelMap = { supported: 'Supported', disputed: 'Disputed', 'needs-context': 'Needs context' };
+  const verdictClassMap = { supported: 'cb-verdict-supported', disputed: 'cb-verdict-disputed', 'needs-context': 'cb-verdict-context' };
+
+  document.getElementById('cb-claims').innerHTML = (claims || []).map(c => `
+    <div class="cb-claim">
+      <i class="ti ${verdictIconMap[c.verdict] || 'ti-info-circle'} cb-claim-icon" style="color:${verdictColorMap[c.verdict] || '#888'};" aria-hidden="true"></i>
+      <div>
+        <div class="cb-claim-text">${c.text}</div>
+        <div class="cb-claim-verdict ${verdictClassMap[c.verdict] || ''}">${verdictLabelMap[c.verdict] || c.verdict}${c.verdictNote ? ' — ' + c.verdictNote : ''}</div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('cb-context').innerHTML = (missingContext || []).map(item => `
+    <div class="cb-context-item">
+      <i class="ti ti-point-filled" style="color:var(--color-text-secondary); font-size:10px; margin-top:5px; flex-shrink:0;" aria-hidden="true"></i>
+      <span>${item}</span>
+    </div>`).join('');
+
+  document.getElementById('cb-perspectives').innerHTML = (perspectives || []).map(p => `
+    <div class="cb-perspective">
+      <span class="cb-perspective-outlet">${p.outlet}</span>
+      <span class="cb-perspective-summary">${p.angle}</span>
+    </div>`).join('');
+
+  document.getElementById('cb-result').classList.add('visible');
+  document.getElementById('cb-result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function showError(msg) {
+  const el = document.getElementById('cb-error');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+function hideError() {
+  document.getElementById('cb-error').classList.remove('visible');
+}
+</script>
