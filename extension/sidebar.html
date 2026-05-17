@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ContextBot Sidebar</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    :root {
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f5f5f7;
+      --color-background-danger: #fdf2f2;
+      --color-text-primary: #1d1d1f;
+      --color-text-secondary: #86868b;
+      --color-text-danger: #b71c1c;
+      --color-border-secondary: #d2d2d7;
+      --color-border-tertiary: #e5e5ea;
+      --color-border-danger: #f5c2c2;
+      --border-radius-md: 8px;
+      --border-radius-lg: 12px;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-background-secondary);
+      color: var(--color-text-primary);
+      margin: 0;
+      padding: 12px;
+      box-sizing: border-box;
+    }
+
+    #cb-root { padding: 0 0 1.5rem 0; }
+    #cb-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+    #cb-logo { width: 32px; height: 32px; border-radius: 8px; background: #1a1a1a; display: flex; align-items: center; justify-content: center; }
+    #cb-logo i { font-size: 18px; color: #fff; }
+    #cb-title { font-size: 16px; font-weight: 600; color: var(--color-text-primary); }
+    #cb-subtitle { font-size: 12px; color: var(--color-text-secondary); }
+
+    #cb-action-area { 
+      background: var(--color-background-primary); 
+      border: 0.5px solid var(--color-border-secondary); 
+      border-radius: var(--border-radius-lg); 
+      padding: 12px; 
+      margin-bottom: 12px; 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    
+    #cb-analyze-btn { 
+      width: 100%; 
+      padding: 10px; 
+      font-size: 13px; 
+      font-weight: 500; 
+      border-radius: var(--border-radius-md); 
+      border: none; 
+      background: #1a1a1a; 
+      color: #fff; 
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      gap: 6px; 
+      transition: opacity 0.15s; 
+    }
+    #cb-analyze-btn:hover { opacity: 0.85; }
+    #cb-analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #cb-result { display: none; }
+    #cb-result.visible { display: block; }
+
+    .cb-section { 
+      background: var(--color-background-primary); 
+      border: 0.5px solid var(--color-border-tertiary); 
+      border-radius: var(--border-radius-lg); 
+      padding: 12px 14px; 
+      margin-bottom: 10px; 
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .cb-section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .cb-section-icon { font-size: 15px; }
+    .cb-section-title { font-size: 11px; font-weight: 600; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .cb-source-name { font-size: 15px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 4px; }
+    .cb-source-meta { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 10px; line-height: 1.4; }
+    .cb-bias-bar-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .cb-bias-label { font-size: 11px; color: var(--color-text-secondary); width: 30px; }
+    .cb-bias-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--color-background-secondary); position: relative; overflow: visible; }
+    .cb-bias-track { height: 100%; border-radius: 3px; background: var(--color-border-secondary); }
+    .cb-bias-marker { position: absolute; top: -4px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--color-background-primary); transform: translateX(-50%); }
+    
+    .cb-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 2px 8px; border-radius: 99px; font-weight: 500; }
+    .cb-badge.neutral { background: var(--color-background-secondary); color: var(--color-text-secondary); }
+    .cb-badge.left { background: #E6F1FB; color: #185FA5; }
+    .cb-badge.center { background: #EAF3DE; color: #3B6D11; }
+    .cb-badge.right { background: #FAECE7; color: #993C1D; }
+
+    .cb-claim { display: flex; gap: 8px; padding: 8px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+    .cb-claim:last-child { border-bottom: none; padding-bottom: 0; }
+    .cb-claim-icon { font-size: 14px; margin-top: 2px; flex-shrink: 0; }
+    .cb-claim-text { font-size: 13px; color: var(--color-text-primary); line-height: 1.4; }
+    .cb-claim-verdict { font-size: 11px; margin-top: 2px; font-weight: 500; }
+    .cb-verdict-supported { color: #3B6D11; }
+    .cb-verdict-disputed { color: #BA7517; }
+    .cb-verdict-context { color: #185FA5; }
+
+    .cb-context-item { display: flex; gap: 8px; padding: 6px 0; border-bottom: 0.5px solid var(--color-border-tertiary); font-size: 13px; color: var(--color-text-primary); line-height: 1.4; }
+    .cb-context-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+    .cb-perspective { display: flex; flex-direction: column; gap: 4px; padding: 8px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+    .cb-perspective:last-child { border-bottom: none; padding-bottom: 0; }
+    .cb-perspective-outlet { font-size: 12px; font-weight: 600; color: var(--color-text-primary); }
+    .cb-perspective-summary { font-size: 12px; color: var(--color-text-secondary); line-height: 1.4; }
+
+    #cb-loading { display: none; text-align: center; padding: 1.5rem; }
+    #cb-loading.visible { display: block; }
+    .cb-spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--color-border-secondary); border-top-color: var(--color-text-primary); border-radius: 50%; animation: spin 0.7s linear infinite; margin-bottom: 8px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #cb-loading-msg { font-size: 13px; color: var(--color-text-secondary); }
+
+    #cb-error { display: none; background: var(--color-background-danger); border: 0.5px solid var(--color-border-danger); border-radius: var(--border-radius-md); padding: 8px 12px; font-size: 13px; color: var(--color-text-danger); margin-bottom: 10px; line-height: 1.4; }
+    #cb-error.visible { display: block; }
+
+    /* API Key setup container */
+    #cb-key-container { font-size: 12px; margin-top: 10px; border-top: 0.5px solid var(--color-border-tertiary); padding-top: 10px; display: none; }
+    #cb-key-input { width: 100%; box-sizing: border-box; padding: 6px; font-size: 11px; border-radius: 4px; border: 0.5px solid var(--color-border-secondary); margin-top: 4px; }
+    #cb-toggle-key { background: none; border: none; color: var(--color-text-secondary); font-size: 11px; cursor: pointer; text-decoration: underline; padding: 0; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div id="cb-root">
+    <div id="cb-header">
+      <div id="cb-logo"><i class="ti ti-spy" aria-hidden="true"></i></div>
+      <div>
+        <div id="cb-title">ContextBot</div>
+        <div id="cb-subtitle">Intelligence Brief</div>
+      </div>
+    </div>
+
+    <div id="cb-action-area">
+      <button id="cb-analyze-btn">
+        <i class="ti ti-analyze" aria-hidden="true"></i> Analyze This Article
+      </button>
+      
+      <button id="cb-toggle-key" onclick="toggleKeySettings()">Configure Anthropic API Key</button>
+      <div id="cb-key-container">
+        <label for="cb-key-input">Anthropic API Key:</label>
+        <input type="password" id="cb-key-input" placeholder="sk-ant-..." onchange="saveApiKey(this.value)" />
+      </div>
+    </div>
+
+    <div id="cb-error"></div>
+    
+    <div id="cb-loading">
+      <div class="cb-spinner"></div>
+      <div id="cb-loading-msg">Extracting page content...</div>
+    </div>
+
+    <div id="cb-result">
+      <div class="cb-section">
+        <div class="cb-section-header">
+          <i class="ti ti-building-newspaper cb-section-icon" style="color: var(--color-text-secondary);" aria-hidden="true"></i>
+          <span class="cb-section-title">Source intelligence</span>
+        </div>
+        <div id="cb-source-name" class="cb-source-name"></div>
+        <div id="cb-source-meta" class="cb-source-meta"></div>
+        <div class="cb-bias-bar-wrap">
+          <span class="cb-bias-label" style="text-align:right; font-size:10px;">Left</span>
+          <div class="cb-bias-bar">
+            <div class="cb-bias-track" style="width:100%; background: linear-gradient(to right, #B5D4F4, #C0DD97, #F5C4B3); opacity:0.4;"></div>
+            <div class="cb-bias-marker" id="cb-bias-dot" style="background:#1a1a1a; left:50%;"></div>
+          </div>
+          <span class="cb-bias-label" style="font-size:10px;">Right</span>
+        </div>
+        <div id="cb-bias-badge"></div>
+      </div>
+
+      <div class="cb-section">
+        <div class="cb-section-header">
+          <i class="ti ti-check-list cb-section-icon" style="color: var(--color-text-secondary);" aria-hidden="true"></i>
+          <span class="cb-section-title">Key claims</span>
+        </div>
+        <div id="cb-claims"></div>
+      </div>
+
+      <div class="cb-section">
+        <div class="cb-section-header">
+          <i class="ti ti-bulb cb-section-icon" style="color: var(--color-text-secondary);" aria-hidden="true"></i>
+          <span class="cb-section-title">Missing context</span>
+        </div>
+        <div id="cb-context"></div>
+      </div>
+
+      <div class="cb-section">
+        <div class="cb-section-header">
+          <i class="ti ti-arrows-left-right cb-section-icon" style="color: var(--color-text-secondary);" aria-hidden="true"></i>
+          <span class="cb-section-title">Other perspectives</span>
+        </div>
+        <div id="cb-perspectives"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Local storage key for storing user's API Key
+    const API_KEY_STORAGE = "contextbot_api_key";
+    
+    document.addEventListener("DOMContentLoaded", () => {
+      const savedKey = localStorage.getItem(API_KEY_STORAGE);
+      if (savedKey) {
+        document.getElementById("cb-key-input").value = savedKey;
+      }
+      
+      document.getElementById("cb-analyze-btn").addEventListener("click", startAnalysis);
+    });
+
+    function toggleKeySettings() {
+      const container = document.getElementById("cb-key-container");
+      container.style.display = container.style.display === "block" ? "none" : "block";
+    }
+
+    function saveApiKey(val) {
+      localStorage.setItem(API_KEY_STORAGE, val.trim());
+    }
+
+    const loadingMsgs = [
+      'Extracting page content...',
+      'Initiating source intelligence check...',
+      'Analyzing factual assertions...',
+      'Identifying unmentioned details...',
+      'Generating comparative frames...'
+    ];
+
+    async function startAnalysis() {
+      const apiKey = localStorage.getItem(API_KEY_STORAGE);
+      if (!apiKey) {
+        showError("Please set your Anthropic API key first in the settings panel below.");
+        toggleKeySettings();
+        return;
+      }
+
+      hideError();
+      document.getElementById('cb-result').classList.remove('visible');
+      document.getElementById('cb-loading').classList.add('visible');
+      document.getElementById('cb-analyze-btn').disabled = true;
+
+      let msgIdx = 0;
+      const msgEl = document.getElementById('cb-loading-msg');
+      msgEl.textContent = loadingMsgs[0];
+      
+      const msgInterval = setInterval(() => {
+        msgIdx = (msgIdx + 1) % loadingMsgs.length;
+        msgEl.textContent = loadingMsgs[msgIdx];
+      }, 2000);
+
+      try {
+        // Request content extraction from background page
+        chrome.runtime.sendMessage({ action: "GET_ARTICLE_CONTENT" }, async (response) => {
+          if (!response || response.error) {
+            clearInterval(msgInterval);
+            showError(response?.error || "Unable to extract web page content. Make sure you are on a live web page.");
+            resetLoadingState();
+            return;
+          }
+
+          const { title, url, text } = response;
+          const articleContent = text || `Title: ${title}\nURL: ${url}`;
+          
+          try {
+            const parsedResult = await callClaudeAPI(apiKey, articleContent);
+            clearInterval(msgInterval);
+            renderResult(parsedResult);
+          } catch(err) {
+            clearInterval(msgInterval);
+            showError(err.message || "Error analyzing article with Claude AI.");
+            resetLoadingState();
+          }
+        });
+      } catch (e) {
+        clearInterval(msgInterval);
+        showError("Extension messaging failed. Try reloading the extension or page.");
+        resetLoadingState();
+      }
+    }
+
+    function resetLoadingState() {
+      document.getElementById('cb-loading').classList.remove('visible');
+      document.getElementById('cb-analyze-btn').disabled = false;
+    }
+
+    async function callClaudeAPI(apiKey, content) {
+      const prompt = `You are ContextBot, a media intelligence assistant. Analyze the following article input and return a JSON object only (no markdown, no explanation).
+
+Input: ${content}
+
+Return this exact JSON structure:
+{
+  "source": {
+    "name": "Publication name (infer from URL or text)",
+    "ownership": "Who owns/funds it (1 sentence)",
+    "bias": "left-center" | "center" | "right-center" | "left" | "right",
+    "biasPosition": 0.5 (number 0-1, 0=far left, 1=far right, 0.5=center),
+    "trustNotes": "1 sentence on credibility or notable history"
+  },
+  "claims": [
+    { "text": "A key factual claim from the article (short)", "verdict": "supported" | "disputed" | "needs-context", "verdictNote": "Brief explanation" }
+  ],
+  "missingContext": [
+    "A fact, counterargument, or background detail not mentioned in the article"
+  ],
+  "perspectives": [
+    { "outlet": "Outlet name", "angle": "How they'd likely cover this differently (1 sentence)" }
+  ]
+}
+
+Return 2-3 claims, 2-3 missing context items, and 2-3 perspectives. Be specific and useful. Return only valid JSON.`;
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'dangerously-allow-browser': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 1200,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData?.error?.message || `API error (${response.status})`);
+      }
+
+      const data = await response.json();
+      const rawText = data.content.map(b => b.text || '').join('');
+      const cleanJSON = rawText.replace(/```json|```/g, '').trim();
+      return JSON.parse(cleanJSON);
+    }
+
+    function renderResult(d) {
+      const { source, claims, missingContext, perspectives } = d;
+
+      document.getElementById('cb-source-name').textContent = source.name;
+      document.getElementById('cb-source-meta').textContent = (source.ownership || '') + (source.trustNotes ? ' · ' + source.trustNotes : '');
+
+      const pos = Math.max(0.05, Math.min(0.95, source.biasPosition || 0.5));
+      document.getElementById('cb-bias-dot').style.left = (pos * 100) + '%';
+
+      const biasMap = {
+        'left': { cls: 'left', label: 'Left-leaning' },
+        'left-center': { cls: 'left', label: 'Center-left' },
+        'center': { cls: 'center', label: 'Center' },
+        'right-center': { cls: 'right', label: 'Center-right' },
+        'right': { cls: 'right', label: 'Right-leaning' }
+      };
+      const binfo = biasMap[source.bias] || biasMap['center'];
+      document.getElementById('cb-bias-badge').innerHTML = `<span class="cb-badge ${binfo.cls}">${binfo.label}</span>`;
+
+      const verdictIconMap = { supported: 'ti-circle-check', disputed: 'ti-alert-triangle', 'needs-context': 'ti-info-circle' };
+      const verdictColorMap = { supported: '#3B6D11', disputed: '#BA7517', 'needs-context': '#185FA5' };
+      const verdictLabelMap = { supported: 'Supported', disputed: 'Disputed', 'needs-context': 'Needs context' };
+      const verdictClassMap = { supported: 'cb-verdict-supported', disputed: 'cb-verdict-disputed', 'needs-context': 'cb-verdict-context' };
+
+      document.getElementById('cb-claims').innerHTML = (claims || []).map(c => `
+        <div class="cb-claim">
+          <i class="ti ${verdictIconMap[c.verdict] || 'ti-info-circle'} cb-claim-icon" style="color:${verdictColorMap[c.verdict] || '#888'};" aria-hidden="true"></i>
+          <div>
+            <div class="cb-claim-text">${c.text}</div>
+            <div class="cb-claim-verdict ${verdictClassMap[c.verdict] || ''}">${verdictLabelMap[c.verdict] || c.verdict}${c.verdictNote ? ' — ' + c.verdictNote : ''}</div>
+          </div>
+        </div>`).join('');
+
+      document.getElementById('cb-context').innerHTML = (missingContext || []).map(item => `
+        <div class="cb-context-item">
+          <i class="ti ti-point-filled" style="color:var(--color-text-secondary); font-size:8px; margin-top:4px; flex-shrink:0;" aria-hidden="true"></i>
+          <span>${item}</span>
+        </div>`).join('');
+
+      document.getElementById('cb-perspectives').innerHTML = (perspectives || []).map(p => `
+        <div class="cb-perspective">
+          <span class="cb-perspective-outlet">${p.outlet}</span>
+          <span class="cb-perspective-summary">${p.angle}</span>
+        </div>`).join('');
+
+      resetLoadingState();
+      document.getElementById('cb-result').classList.add('visible');
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('cb-error');
+      el.textContent = msg;
+      el.classList.add('visible');
+    }
+
+    function hideError() {
+      document.getElementById('cb-error').classList.remove('visible');
+    }
+  </script>
+</body>
+</html>
