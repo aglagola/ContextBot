@@ -64,6 +64,35 @@
 
   #cb-error { display: none; background: var(--color-background-danger); border: 0.5px solid var(--color-border-danger); border-radius: var(--border-radius-md); padding: 10px 14px; font-size: 14px; color: var(--color-text-danger); margin-bottom: 10px; }
   #cb-error.visible { display: block; }
+
+  /* Auth UI */
+  .cb-header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .cb-btn-outline { background: transparent; border: 1px solid var(--color-border-secondary); color: var(--color-text-primary); padding: 6px 12px; font-size: 13px; border-radius: var(--border-radius-md); cursor: pointer; transition: all 0.15s; font-weight: 500; }
+  .cb-btn-outline:hover { background: var(--color-background-secondary); }
+  .cb-btn-primary { background: #1a1a1a; border: none; color: #fff; padding: 6px 12px; font-size: 13px; border-radius: var(--border-radius-md); cursor: pointer; transition: all 0.15s; font-weight: 500; }
+  .cb-btn-primary:hover { opacity: 0.85; }
+  
+  /* Modal */
+  .cb-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s; backdrop-filter: blur(2px); }
+  .cb-modal-overlay.active { opacity: 1; pointer-events: auto; }
+  .cb-modal { background: var(--color-background-primary); border: 1px solid var(--color-border-secondary); border-radius: var(--border-radius-lg); width: 100%; max-width: 400px; padding: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); transform: translateY(10px); transition: transform 0.2s; }
+  .cb-modal-overlay.active .cb-modal { transform: translateY(0); }
+  .cb-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+  .cb-modal-title { font-size: 18px; font-weight: 600; color: var(--color-text-primary); }
+  .cb-modal-close { background: none; border: none; font-size: 20px; color: var(--color-text-secondary); cursor: pointer; padding: 0; display: flex; }
+  .cb-modal-close:hover { color: var(--color-text-primary); }
+  
+  /* Forms */
+  .cb-form-group { margin-bottom: 1rem; }
+  .cb-form-label { display: block; font-size: 13px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 6px; }
+  .cb-form-input { width: 100%; padding: 8px 12px; border: 1px solid var(--color-border-secondary); border-radius: var(--border-radius-md); font-size: 14px; background: var(--color-background-primary); color: var(--color-text-primary); box-sizing: border-box; }
+  .cb-form-input:focus { outline: none; border-color: #1a1a1a; }
+  
+  .cb-auth-error { font-size: 13px; color: var(--color-text-danger); margin-bottom: 10px; display: none; }
+  .cb-auth-error.visible { display: block; }
+
+  .cb-usage-text { font-size: 13px; color: var(--color-text-secondary); font-weight: 500; }
+  .cb-pro-badge { background: linear-gradient(135deg, #FFD700, #FDB931); color: #000; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
 </style>
 
 <div id="cb-root">
@@ -72,6 +101,10 @@
     <div>
       <div id="cb-title">ContextBot</div>
       <div id="cb-subtitle">Read smarter, not harder</div>
+    </div>
+    <div class="cb-header-right">
+      <span id="cb-header-usage" class="cb-usage-text" style="display:none;"></span>
+      <button id="cb-header-auth-btn" class="cb-btn-outline" onclick="openAuthModal()">Sign In</button>
     </div>
   </div>
 
@@ -133,10 +166,226 @@
       <div id="cb-perspectives"></div>
     </div>
   </div>
+
+  <!-- Auth/Billing Modal -->
+  <div class="cb-modal-overlay" id="cb-auth-modal">
+    <div class="cb-modal">
+      <div class="cb-modal-header">
+        <div class="cb-modal-title" id="cb-modal-title">Account</div>
+        <button class="cb-modal-close" onclick="closeAuthModal()" style="font-size: 24px; line-height: 1;">&times;</button>
+      </div>
+
+      <div class="cb-auth-error" id="cb-auth-error"></div>
+
+      <!-- Login/Signup View -->
+      <div id="cb-auth-form-view">
+        <div class="cb-tabs" style="display:flex; gap:10px; margin-bottom:1rem; border-bottom:1px solid var(--color-border-tertiary); padding-bottom:8px;">
+          <button class="cb-tab active" id="cb-tab-login" onclick="switchAuthTab('login')" style="border:none; padding:0; font-size:14px; font-weight:500;">Log In</button>
+          <button class="cb-tab" id="cb-tab-signup" onclick="switchAuthTab('signup')" style="border:none; padding:0; font-size:14px; font-weight:500;">Sign Up</button>
+        </div>
+        <div class="cb-form-group">
+          <label class="cb-form-label">Email</label>
+          <input type="email" id="cb-auth-email" class="cb-form-input" placeholder="you@example.com">
+        </div>
+        <div class="cb-form-group">
+          <label class="cb-form-label">Password</label>
+          <input type="password" id="cb-auth-password" class="cb-form-input" placeholder="••••••••">
+        </div>
+        <button class="cb-btn-primary" style="width:100%; padding:10px;" id="cb-auth-submit" onclick="submitAuth()">Log In</button>
+      </div>
+
+      <!-- Account / Upgraded View -->
+      <div id="cb-account-view" style="display:none;">
+        <div style="margin-bottom:1rem;">
+          <div style="font-size:13px; color:var(--color-text-secondary); margin-bottom:4px;">Email</div>
+          <div id="cb-account-email" style="font-size:15px; font-weight:500; color:var(--color-text-primary);"></div>
+        </div>
+        <div style="margin-bottom:1.5rem;">
+          <div style="font-size:13px; color:var(--color-text-secondary); margin-bottom:4px;">Plan</div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span id="cb-account-tier" style="font-size:15px; font-weight:500; color:var(--color-text-primary); text-transform:capitalize;">Free</span>
+            <span id="cb-account-pro-badge" class="cb-pro-badge" style="display:none;">PRO</span>
+          </div>
+        </div>
+        
+        <div id="cb-upgrade-section" style="background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:1rem; margin-bottom:1rem; text-align:center;">
+          <div style="font-size:14px; font-weight:500; margin-bottom:6px;">Unlimited Analyses</div>
+          <div style="font-size:13px; color:var(--color-text-secondary); margin-bottom:12px;">Upgrade to Pro to remove the 10/month limit.</div>
+          <button class="cb-btn-primary" style="width:100%; background:#635BFF;" onclick="upgradeToPro()">Upgrade with Stripe</button>
+        </div>
+
+        <button class="cb-btn-outline" style="width:100%; color:var(--color-text-danger); border-color:var(--color-border-tertiary);" onclick="logout()">Log Out</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
 let activeTab = 'url';
+let currentUser = null;
+let currentAuthMode = 'login'; // 'login' | 'signup'
+
+// Initialize app
+document.addEventListener('DOMContentLoaded', () => {
+  fetchProfile();
+  
+  // Close modal when clicking outside
+  document.getElementById('cb-auth-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeAuthModal();
+  });
+});
+
+async function fetchProfile() {
+  const token = localStorage.getItem('cb_token');
+  if (!token) return;
+
+  try {
+    const res = await fetch('http://localhost:5001/api/auth/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      currentUser = data.user;
+      updateHeaderUI();
+    } else {
+      // Token invalid
+      localStorage.removeItem('cb_token');
+      currentUser = null;
+    }
+  } catch (e) {
+    console.error('Failed to fetch profile', e);
+  }
+}
+
+function updateHeaderUI(usageInfo = null) {
+  const btn = document.getElementById('cb-header-auth-btn');
+  const usageSpan = document.getElementById('cb-header-usage');
+  
+  if (currentUser) {
+    // If real user (not anonymous demo)
+    if (!currentUser.email.startsWith('demo-')) {
+      btn.textContent = 'Account';
+    } else {
+      btn.textContent = 'Sign Up';
+    }
+    
+    if (currentUser.tier === 'pro') {
+      usageSpan.textContent = 'Unlimited';
+      usageSpan.style.display = 'inline';
+    } else if (usageInfo) {
+      usageSpan.textContent = `Usage: ${usageInfo.used}/${usageInfo.limit}`;
+      usageSpan.style.display = 'inline';
+    }
+  } else {
+    btn.textContent = 'Sign In';
+    usageSpan.style.display = 'none';
+  }
+}
+
+// Modal Handlers
+function openAuthModal() {
+  document.getElementById('cb-auth-modal').classList.add('active');
+  const errorEl = document.getElementById('cb-auth-error');
+  errorEl.classList.remove('visible');
+  
+  if (currentUser && !currentUser.email.startsWith('demo-')) {
+    // Show Account view
+    document.getElementById('cb-auth-form-view').style.display = 'none';
+    document.getElementById('cb-account-view').style.display = 'block';
+    document.getElementById('cb-account-email').textContent = currentUser.email;
+    document.getElementById('cb-account-tier').textContent = currentUser.tier;
+    
+    if (currentUser.tier === 'pro') {
+      document.getElementById('cb-account-pro-badge').style.display = 'inline';
+      document.getElementById('cb-upgrade-section').style.display = 'none';
+    } else {
+      document.getElementById('cb-account-pro-badge').style.display = 'none';
+      document.getElementById('cb-upgrade-section').style.display = 'block';
+    }
+  } else {
+    // Show Login/Signup form
+    document.getElementById('cb-auth-form-view').style.display = 'block';
+    document.getElementById('cb-account-view').style.display = 'none';
+    switchAuthTab('login');
+  }
+}
+
+function closeAuthModal() {
+  document.getElementById('cb-auth-modal').classList.remove('active');
+}
+
+function switchAuthTab(tab) {
+  currentAuthMode = tab;
+  document.getElementById('cb-tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('cb-tab-signup').classList.toggle('active', tab === 'signup');
+  document.getElementById('cb-auth-submit').textContent = tab === 'login' ? 'Log In' : 'Sign Up';
+  document.getElementById('cb-auth-error').classList.remove('visible');
+}
+
+async function submitAuth() {
+  const email = document.getElementById('cb-auth-email').value.trim();
+  const password = document.getElementById('cb-auth-password').value.trim();
+  const errorEl = document.getElementById('cb-auth-error');
+  
+  if (!email || !password) {
+    errorEl.textContent = 'Email and password are required.';
+    errorEl.classList.add('visible');
+    return;
+  }
+  
+  const endpoint = currentAuthMode === 'login' ? '/api/auth/login' : '/api/auth/signup';
+  
+  try {
+    const res = await fetch(`http://localhost:5001${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Authentication failed');
+    
+    localStorage.setItem('cb_token', data.token);
+    currentUser = data.user;
+    updateHeaderUI();
+    closeAuthModal();
+    
+    // Clear inputs
+    document.getElementById('cb-auth-email').value = '';
+    document.getElementById('cb-auth-password').value = '';
+  } catch (e) {
+    errorEl.textContent = e.message;
+    errorEl.classList.add('visible');
+  }
+}
+
+function logout() {
+  localStorage.removeItem('cb_token');
+  currentUser = null;
+  updateHeaderUI();
+  closeAuthModal();
+}
+
+async function upgradeToPro() {
+  const token = localStorage.getItem('cb_token');
+  if (!token) return;
+  
+  try {
+    const res = await fetch('http://localhost:5001/api/billing/upgrade', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (res.ok && data.url) {
+      window.location.href = data.url;
+    } else {
+      alert('Failed to initiate checkout: ' + (data.error || 'Unknown error'));
+    }
+  } catch (e) {
+    console.error('Upgrade error:', e);
+    alert('Something went wrong during checkout initialization.');
+  }
+}
 
 function switchTab(tab) {
   activeTab = tab;
@@ -167,52 +416,52 @@ async function analyze() {
     msgEl.textContent = loadingMsgs[msgIdx];
   }, 2200);
 
-  const prompt = `You are ContextBot, a media intelligence assistant. Analyze the following article input and return a JSON object only (no markdown, no explanation).
-
-Input: ${input}
-
-Return this exact JSON structure:
-{
-  "source": {
-    "name": "Publication name (infer from URL or text)",
-    "ownership": "Who owns/funds it (1 sentence)",
-    "bias": "left-center" | "center" | "right-center" | "left" | "right",
-    "biasPosition": 0.5 (number 0-1, 0=far left, 1=far right, 0.5=center),
-    "trustNotes": "1 sentence on credibility or notable history"
-  },
-  "claims": [
-    { "text": "A key factual claim from the article (short)", "verdict": "supported" | "disputed" | "needs-context", "verdictNote": "Brief explanation" }
-  ],
-  "missingContext": [
-    "A fact, counterargument, or background detail not mentioned in the article"
-  ],
-  "perspectives": [
-    { "outlet": "Outlet name", "angle": "How they'd likely cover this differently (1 sentence)" }
-  ]
-}
-
-Return 2-3 claims, 2-3 missing context items, and 2-3 perspectives. Be specific and useful. Return only valid JSON.`;
-
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    // 1. Get or create anonymous session token
+    let token = localStorage.getItem('cb_token');
+    if (!token) {
+      const email = `demo-${Date.now()}@contextbot.com`;
+      const authResp = await fetch('http://localhost:5001/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: 'demo' })
+      });
+      if (authResp.ok) {
+        const authData = await authResp.json();
+        token = authData.token;
+        localStorage.setItem('cb_token', token);
+      }
+    }
+
+    // 2. Call local backend
+    const resp = await fetch('http://localhost:5001/api/analyze', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ content: input })
     });
 
+    if (!resp.ok) {
+      if (resp.status === 429) {
+        throw new Error('You have reached your 10 free analyses for the month.');
+      }
+      const errData = await resp.json().catch(() => ({}));
+      throw new Error(errData.error || 'Server error occurred');
+    }
+
     const data = await resp.json();
-    const raw = data.content.map(b => b.text || '').join('');
-    const clean = raw.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
     clearInterval(msgInterval);
-    renderResult(parsed);
+    renderResult(data.analysis);
+
+    // Show usage in UI
+    if (data.usage) {
+      updateHeaderUI(data.usage);
+    }
   } catch(e) {
     clearInterval(msgInterval);
-    showError('Something went wrong analyzing this article. Please try again.');
+    showError(e.message || 'Something went wrong analyzing this article. Please try again.');
     console.error(e);
   } finally {
     document.getElementById('cb-loading').classList.remove('visible');
