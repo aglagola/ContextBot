@@ -76,34 +76,22 @@
     .view { display: none; padding: 14px; }
     .view.active { display: block; }
 
-    /* Settings view */
-    .settings-label {
-      font-size: 11px; font-weight: 500;
-      color: var(--muted); text-transform: uppercase;
-      letter-spacing: 0.08em; margin-bottom: 6px;
-    }
-    .settings-input {
-      width: 100%; padding: 8px 10px;
-      background: var(--bg2); border: 1px solid var(--border2);
-      border-radius: var(--radius); color: var(--text);
-      font-family: 'DM Sans', sans-serif; font-size: 13px;
-      outline: none; transition: border-color 0.15s;
-    }
-    .settings-input:focus { border-color: var(--accent2); }
-    .settings-input::placeholder { color: var(--muted); }
-    .save-btn {
-      width: 100%; margin-top: 10px;
-      padding: 9px; border: none;
-      background: var(--accent); color: #1a1400;
-      font-family: 'DM Sans', sans-serif; font-weight: 500;
-      font-size: 13px; border-radius: var(--radius);
-      cursor: pointer; transition: opacity 0.15s;
-    }
-    .save-btn:hover { opacity: 0.88; }
-    .settings-hint {
-      margin-top: 8px; font-size: 11px; color: var(--muted); text-align: center;
-    }
-    .settings-hint a { color: var(--accent2); text-decoration: none; }
+    /* Account view */
+    .account-tabs { display: flex; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .acc-tab { background: none; border: none; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; }
+    .acc-tab.active { color: var(--accent); }
+    .acc-label { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .acc-input { width: 100%; padding: 8px 10px; background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--radius); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none; margin-bottom: 12px; }
+    .acc-input:focus { border-color: var(--accent2); }
+    .acc-btn { width: 100%; padding: 9px; border: none; background: var(--accent); color: #1a1400; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 13px; border-radius: var(--radius); cursor: pointer; transition: opacity 0.15s; }
+    .acc-btn:hover { opacity: 0.88; }
+    .acc-btn-outline { width: 100%; padding: 9px; border: 1px solid var(--border2); background: transparent; color: var(--red); font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 13px; border-radius: var(--radius); cursor: pointer; margin-top: 10px; }
+    
+    .acc-info-row { margin-bottom: 12px; }
+    .acc-info-val { font-size: 14px; color: var(--text); font-weight: 500; }
+    .acc-upgrade-box { background: rgba(232,213,163,0.05); border: 1px solid var(--border2); border-radius: var(--radius); padding: 12px; text-align: center; margin-bottom: 12px; }
+    .acc-upgrade-btn { background: #635BFF; color: white; width: 100%; padding: 9px; border: none; border-radius: var(--radius); font-weight: 500; cursor: pointer; margin-top: 8px; }
+    .pro-badge { background: linear-gradient(135deg, #FFD700, #FDB931); color: #000; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; margin-left: 6px; }
 
     /* Idle view */
     .idle-icon {
@@ -267,8 +255,54 @@
       </div>
       <span class="logo-name">ContextBot</span>
     </div>
+    <button class="settings-btn" id="toggle-account" title="Account">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M2.5 14c0-3 2.5-5 5.5-5s5.5 2 5.5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    </button>
   </div>
 
+  <!-- Account view -->
+  <div class="view" id="view-account">
+    <div id="acc-error-box" class="error-box" style="display:none;"></div>
+
+    <!-- Login Form -->
+    <div id="acc-form-view">
+      <div class="account-tabs">
+        <button class="acc-tab active" id="tab-login">Log In</button>
+        <button class="acc-tab" id="tab-signup">Sign Up</button>
+      </div>
+      <div class="acc-label">Email</div>
+      <input class="acc-input" type="email" id="acc-email" placeholder="you@example.com" />
+      <div class="acc-label">Password</div>
+      <input class="acc-input" type="password" id="acc-password" placeholder="••••••••" />
+      <button class="acc-btn" id="acc-submit-btn">Log In</button>
+    </div>
+
+    <!-- Profile View -->
+    <div id="acc-profile-view" style="display:none;">
+      <div class="acc-info-row">
+        <div class="acc-label">Email</div>
+        <div class="acc-info-val" id="acc-val-email"></div>
+      </div>
+      <div class="acc-info-row">
+        <div class="acc-label">Plan</div>
+        <div class="acc-info-val">
+          <span id="acc-val-tier" style="text-transform:capitalize;">Free</span>
+          <span id="acc-pro-badge" class="pro-badge" style="display:none;">PRO</span>
+        </div>
+      </div>
+
+      <div class="acc-upgrade-box" id="acc-upgrade-section">
+        <div style="font-size:13px; font-weight:500; margin-bottom:4px; color:var(--text);">Unlimited Analyses</div>
+        <div style="font-size:12px; color:var(--muted);">Upgrade to Pro to remove the 10/month limit.</div>
+        <button class="acc-upgrade-btn" id="acc-upgrade-btn">Upgrade with Stripe</button>
+      </div>
+
+      <button class="acc-btn-outline" id="acc-logout-btn">Log Out</button>
+    </div>
+  </div>
   <!-- Idle view -->
   <div class="view active" id="view-idle">
     <div class="idle-icon">

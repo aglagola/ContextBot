@@ -2,6 +2,7 @@
 
 const views = {
   idle: document.getElementById('view-idle'),
+  account: document.getElementById('view-account'),
   loading: document.getElementById('view-loading'),
   results: document.getElementById('view-results'),
 };
@@ -10,10 +11,128 @@ function showView(name) {
   Object.entries(views).forEach(([k, el]) => el.classList.toggle('active', k === name));
 }
 
+let currentUser = null;
+let currentAuthMode = 'login';
+let accountOpen = false;
+
+document.getElementById('toggle-account').addEventListener('click', () => {
+  accountOpen = !accountOpen;
+  if (accountOpen) {
+    showView('account');
+    updateAccountUI();
+  } else {
+    showView('idle');
+  }
+});
+
+function switchAuthTab(tab) {
+  currentAuthMode = tab;
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+  document.getElementById('acc-submit-btn').textContent = tab === 'login' ? 'Log In' : 'Sign Up';
+  document.getElementById('acc-error-box').style.display = 'none';
+}
+
+document.getElementById('tab-login').addEventListener('click', () => switchAuthTab('login'));
+document.getElementById('tab-signup').addEventListener('click', () => switchAuthTab('signup'));
+
+function updateAccountUI() {
+  document.getElementById('acc-error-box').style.display = 'none';
+  if (currentUser && !currentUser.email.startsWith('demo-')) {
+    document.getElementById('acc-form-view').style.display = 'none';
+    document.getElementById('acc-profile-view').style.display = 'block';
+    document.getElementById('acc-val-email').textContent = currentUser.email;
+    document.getElementById('acc-val-tier').textContent = currentUser.tier;
+    if (currentUser.tier === 'pro') {
+      document.getElementById('acc-pro-badge').style.display = 'inline';
+      document.getElementById('acc-upgrade-section').style.display = 'none';
+    } else {
+      document.getElementById('acc-pro-badge').style.display = 'none';
+      document.getElementById('acc-upgrade-section').style.display = 'block';
+    }
+  } else {
+    document.getElementById('acc-form-view').style.display = 'block';
+    document.getElementById('acc-profile-view').style.display = 'none';
+    switchAuthTab('login');
+  }
+}
+
+document.getElementById('acc-submit-btn').addEventListener('click', async () => {
+  const email = document.getElementById('acc-email').value.trim();
+  const password = document.getElementById('acc-password').value.trim();
+  const errorEl = document.getElementById('acc-error-box');
+  
+  if (!email || !password) {
+    errorEl.textContent = 'Email and password required.';
+    errorEl.style.display = 'block';
+    return;
+  }
+  
+  const endpoint = currentAuthMode === 'login' ? '/api/auth/login' : '/api/auth/signup';
+  try {
+    const res = await fetch(`http://localhost:5001${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Auth failed');
+    
+    await chrome.storage.local.set({ cb_token: data.token });
+    currentUser = data.user;
+    updateAccountUI();
+    document.getElementById('acc-email').value = '';
+    document.getElementById('acc-password').value = '';
+  } catch (e) {
+    errorEl.textContent = e.message;
+    errorEl.style.display = 'block';
+  }
+});
+
+document.getElementById('acc-logout-btn').addEventListener('click', async () => {
+  await chrome.storage.local.remove('cb_token');
+  currentUser = null;
+  accountOpen = false;
+  showView('idle');
+  initializeSession(); // generate a new demo token
+});
+
+document.getElementById('acc-upgrade-btn').addEventListener('click', async () => {
+  const { cb_token } = await chrome.storage.local.get('cb_token');
+  if (!cb_token) return;
+  try {
+    const res = await fetch('http://localhost:5001/api/billing/upgrade', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${cb_token}` }
+    });
+    const data = await res.json();
+    if (res.ok && data.url) {
+      chrome.tabs.create({ url: data.url }); // Open Stripe in new tab
+    } else {
+      throw new Error(data.error || 'Failed to open checkout');
+    }
+  } catch (e) {
+    const errorEl = document.getElementById('acc-error-box');
+    errorEl.textContent = e.message;
+    errorEl.style.display = 'block';
+  }
+});
+
 // --- Session Init ---
 async function initializeSession() {
   const { cb_token } = await chrome.storage.local.get('cb_token');
   if (cb_token) {
+    // Try to fetch real profile
+    try {
+      const pRes = await fetch('http://localhost:5001/api/auth/me', {
+        headers: { 'Authorization': `Bearer ${cb_token}` }
+      });
+      if (pRes.ok) {
+        const pData = await pRes.json();
+        currentUser = pData.user;
+      }
+    } catch (e) {}
+
     document.getElementById('analyze-btn').disabled = false;
     showView('idle');
     return;
