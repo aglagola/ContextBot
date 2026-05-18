@@ -10,6 +10,12 @@ ContextBot is a browser extension (and web prototype) that gives you an instant 
 
 <img width="364" height="246" alt="Screenshot 2026-05-18 at 3 16 34 PM" src="https://github.com/user-attachments/assets/e86c6d39-8143-4651-b0bc-54a824e774bf" />
 
+<img width="361" height="294" alt="Screenshot 2026-05-18 at 3 17 06 PM" src="https://github.com/user-attachments/assets/a6a6c327-099c-448e-ab98-ec251a7c40ad" />
+
+<img width="361" height="294" alt="Screenshot 2026-05-18 at 3 17 29 PM" src="https://github.com/user-attachments/assets/cabce75a-ad71-49ae-9a05-032c7104e022" />
+
+<img width="361" height="359" alt="Screenshot 2026-05-18 at 3 18 01 PM" src="https://github.com/user-attachments/assets/9ebb7c22-17d2-4e3b-a6fc-dfc77930dd33" />
+
 ---
 
 ## What it does
