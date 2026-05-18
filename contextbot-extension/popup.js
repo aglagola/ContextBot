@@ -2,7 +2,6 @@
 
 const views = {
   idle: document.getElementById('view-idle'),
-  settings: document.getElementById('view-settings'),
   loading: document.getElementById('view-loading'),
   results: document.getElementById('view-results'),
 };
@@ -11,38 +10,38 @@ function showView(name) {
   Object.entries(views).forEach(([k, el]) => el.classList.toggle('active', k === name));
 }
 
-// --- Settings toggle ---
-const toggleBtn = document.getElementById('toggle-settings');
-let settingsOpen = false;
-
-toggleBtn.addEventListener('click', () => {
-  settingsOpen = !settingsOpen;
-  if (settingsOpen) {
-    showView('settings');
-    chrome.storage.local.get('apiKey', ({ apiKey }) => {
-      if (apiKey) document.getElementById('api-key-input').value = apiKey;
-    });
-  } else {
-    checkKeyAndShowIdle();
-  }
-});
-
-document.getElementById('save-key-btn').addEventListener('click', () => {
-  const key = document.getElementById('api-key-input').value.trim();
-  if (!key) return;
-  chrome.storage.local.set({ apiKey: key }, () => {
-    settingsOpen = false;
-    checkKeyAndShowIdle();
-  });
-});
-
-function checkKeyAndShowIdle() {
-  chrome.storage.local.get('apiKey', ({ apiKey }) => {
-    const banner = document.getElementById('no-key-banner');
-    banner.style.display = apiKey ? 'none' : 'block';
-    document.getElementById('analyze-btn').disabled = !apiKey;
+// --- Session Init ---
+async function initializeSession() {
+  const { cb_token } = await chrome.storage.local.get('cb_token');
+  if (cb_token) {
+    document.getElementById('analyze-btn').disabled = false;
     showView('idle');
-  });
+    return;
+  }
+  
+  // Auto-generate a demo account if no token
+  try {
+    const email = `demo-${Date.now()}@contextbot.com`;
+    const res = await fetch('http://localhost:5001/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: 'demo' })
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      await chrome.storage.local.set({ cb_token: data.token });
+      document.getElementById('analyze-btn').disabled = false;
+      showView('idle');
+    } else {
+      throw new Error('Signup failed');
+    }
+  } catch (e) {
+    console.error('Session init error:', e);
+    const box = document.getElementById('error-box');
+    box.textContent = 'Could not connect to ContextBot servers.';
+    box.style.display = 'block';
+  }
 }
 
 // --- Analyze button ---
@@ -83,12 +82,12 @@ async function runAnalysis() {
       articleData = await chrome.tabs.sendMessage(tab.id, { type: 'EXTRACT_ARTICLE' });
     }
 
-    const { apiKey } = await chrome.storage.local.get('apiKey');
-    if (!apiKey) throw new Error('No API key set. Please add your key in settings.');
+    const { cb_token } = await chrome.storage.local.get('cb_token');
+    if (!cb_token) throw new Error('No session token found. Please reopen the extension.');
 
     const response = await chrome.runtime.sendMessage({
       type: 'ANALYZE_ARTICLE',
-      payload: { text: articleData.text, url: articleData.url, apiKey }
+      payload: { text: articleData.text, url: articleData.url, token: cb_token }
     });
 
     clearInterval(interval);
@@ -182,4 +181,4 @@ function renderResults(d) {
 }
 
 // --- Init ---
-checkKeyAndShowIdle();
+initializeSession();
