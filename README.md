@@ -6,6 +6,12 @@ ContextBot is a browser extension (and web prototype) that gives you an instant 
 
 ---
 
+## Screenshots
+
+<img width="364" height="246" alt="Screenshot 2026-05-18 at 3 16 34 PM" src="https://github.com/user-attachments/assets/e86c6d39-8143-4651-b0bc-54a824e774bf" />
+
+---
+
 ## What it does
 
 Paste an article URL or text, and ContextBot returns four panels of analysis powered by Claude AI:
